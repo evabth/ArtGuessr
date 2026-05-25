@@ -1,0 +1,51 @@
+Phase 1 — Core Game Loop (Get this working first)
+
+Set up a React frontend and Express/FastAPI backend
+Connect to the Art Institute of Chicago API on the backend
+Fetch a random painting and return it to the frontend
+Display the painting with a year slider (1300–2000)
+Submit a guess and show how close they were
+Show the correct year and painting details after guessing
+Add a "Next Painting" button to keep playing
+
+At the end of this phase you have a fully playable game, just with no persistence.
+
+Phase 2 — Polish the Game Feel
+
+Build a scoring system based on how close the guess is
+Add a running score total for the current session
+Add a round counter (e.g. 10 rounds per game)
+Build an end-of-game summary screen with total score
+Add basic animations — reveal the answer, score feedback
+
+
+Phase 3 — Auth & User Accounts
+
+Set up Supabase and connect it to your backend
+Add sign up / log in pages on the frontend
+Protect the game route — only logged in users can play
+Save each completed game score to Supabase
+Display the user's personal best score on their profile
+
+
+Phase 4 — Saved Artworks & History
+
+Add a "Save this painting" button on the results screen
+Store saved artworks in Supabase tied to the user
+Build a personal gallery page showing their saved artworks
+Show guess history — what year they guessed vs the real year
+
+
+Phase 5 — Leaderboard & Daily Challenge
+
+Build a global leaderboard pulling top scores from Supabase
+Create a daily challenge mode — same painting for everyone that day
+Track and display user streaks for consecutive days played
+
+
+Phase 6 — Stretch Features (if time allows)
+
+Add difficulty modes filtered by era
+Add a hint system that reveals the artist for a point penalty
+Pull from the Met Museum API to expand the painting pool
+Add mobile responsiveness and final UI polish
