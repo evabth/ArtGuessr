@@ -1,122 +1,155 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import React, { useState } from 'react';
 import './App.css'
 
+
+const server_URL = "http://localhost:3000"
+
 function App() {
-  const [count, setCount] = useState(0)
+  interface Result {
+    score: number;
+    correct: number;
+    artist_title: string;
+    description?: string;
+  }
+  
+  const [artID, setArtID] = useState("")
+  const [imageURL, setImageURL] = useState("")
+  const [currYear, setCurrYear] = useState(1)
+  const [currYearFormatted, setCurrYearFormatted] = useState("1701")
+  const [hasGuessed, setHasGuessed] = useState(false)
+  const [century, setCentury] = useState(18)
+  const [result, setResult] = useState<Result | null>(null);
+
+
+  async function fetchImage() {
+
+    const data = await fetch(server_URL + "/random")
+
+    const dataJSON = await data.json()
+    
+    setImageURL(dataJSON.imageURL)
+    setArtID(dataJSON.id)
+  }
+
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>){
+    const year = Number(e.target.value)
+    setCurrYear(year)
+
+    setCurrYearFormatted(formatYear(((century-1)*100)+year))
+  }
+
+
+  async function handleGuess(){    
+
+    const guess_response = await fetch(server_URL + "/guess", {
+      method:'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:JSON.stringify({
+        artID: artID,
+        guess: ((century-1)*100)+currYear,
+      })
+
+      
+
+    })
+
+    const guess_json = await guess_response.json()
+    console.log("guess results")
+    console.log(guess_json)
+
+    setResult(guess_json)
+
+    setHasGuessed(true)
+
+  }
+
+
+  function formatYear (year:number){
+
+    if (year >= 1){
+      return `${year}`
+
+    }else{
+      return `${-1*(year)} BC`
+    }
+
+  }
+
+  function nextPainting(){
+
+    setHasGuessed(false)
+    fetchImage()
+
+  }
+
+  function handleCentury(change:number){
+
+    const newCentury = century + change;
+    
+
+    if(newCentury<22 && newCentury> -13){
+      setCentury(newCentury)
+      setCurrYearFormatted(formatYear(((newCentury-1)*100)+currYear))
+    }
+
+    
+
+  }
+
 
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
+      <h1>Art Guessr</h1>
+      {!imageURL &&
         <div>
-          <h1>Get started</h1>
-          <p>
-            
-          </p>
+          <button onClick={fetchImage}>Play!</button>
         </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      }
+      {imageURL &&
+        <section className='game-layout'>
+          <div className="image-column">
+            <img src={imageURL} />
+          </div>
 
-      <div className="ticks"></div>
+          <div className="guess-column">
+            {!hasGuessed ? (
+              <>
+                <h2>Century</h2>
+                <div id='century-selector'>
+                  <button onClick={()=>{handleCentury(-1)}}><strong>{"<"}</strong></button>
+                  <h2>{century}</h2>
+                  <button onClick={()=>{handleCentury(1)}}>{">"}</button>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+                </div>
+                <input type='range' value={currYear} onChange={handleChange} min={0} max={99} />
+                <h2>Current Year Selected: {currYearFormatted}</h2>
+                <button onClick={handleGuess}>Guess</button>
+              </>
+            ) : (
+              <>
+                { result ? <>
+                  <h2>Your Guess: {currYearFormatted}</h2>
+                  <h2>Score: {result.score}</h2>
+                  <h2>Correct Answer: {formatYear(result.correct)}</h2>
+                  <h2>Artist: {result.artist_title}</h2>
+                  {result.description && (
+                    <>
+                      <h2>Description:</h2>
+                      <div dangerouslySetInnerHTML={{ __html: result.description }} />
+                    </>
+                  )}
+                  <button onClick={nextPainting}>Next Painting</button>
+                </> : <></>}
+              </>
+            )}
+          </div>
+        </section>
+      }
     </>
   )
 }
+
+
+
 
 export default App
