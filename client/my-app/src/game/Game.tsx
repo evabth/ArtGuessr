@@ -46,7 +46,10 @@ function Game() {
   }
 
 
-  async function handleGuess(){    
+  async function handleGuess(e:React.MouseEvent<HTMLButtonElement>){    
+    const button = e.currentTarget
+
+    button.disabled = true
 
     const guess_response = await fetch(server_URL + "/guess", {
       method:'POST',
@@ -59,6 +62,12 @@ function Game() {
       
 
     })
+
+    if (guess_response.status != 200){
+      button.disabled = false
+      console.log("guess failed")
+      return
+    }
 
     const guess_json = await guess_response.json()
     console.log("guess results")
@@ -89,12 +98,30 @@ function Game() {
 
   }
 
+  function formatCentury(century:number){
+
+    if (century % 100 >= 11 && century % 100 <= 13) return `${century}th`;
+    
+    const r = century % 10;
+    return r === 1 ? `${century}st` : r === 2 ? `${century}nd` : r === 3 ? `${century}rd` : `${century}th`;
+  }
+
+  function centLabel(c:number) {
+    if (c > 1) {
+      const start = (c-1) * 100;
+      return `${start}–${start + 99}`;
+    }
+    if (c === 1) return "1–99";
+    const start = c * 100;
+    return `${Math.abs(start - 99)}–${Math.abs(start)} BC`;
+  }
+
   function nextPainting(){
 
     setHasGuessed(false)
-    if (round == 10){
+    //if (round == 10){
       setImageURL("")
-    }
+    //}
     setRound(round+1)
     console.log(round)
     if(round != 10){
@@ -147,7 +174,7 @@ function Game() {
           <section className='game-layout'>
             <motion.div className="image-column">
               <AnimatePresence mode='wait'>
-              { imageURL &&
+              { imageURL ? (
                 
                   <motion.div
                     key={imageURL}
@@ -162,6 +189,24 @@ function Game() {
                     />
                   
                   </motion.div>
+                ):(
+                  <motion.div
+                    key={imageURL}
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: .5}} 
+                    exit={{ opacity: 0 }}
+                  >
+                    <motion.img 
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 10,
+                        repeat: Infinity,
+                        ease: "linear"
+                      }}
+                      src='/vitruvian_man_transparent_white.png'
+                    />
+                  </motion.div>
+                )
                 
               }
               </AnimatePresence>
@@ -170,24 +215,52 @@ function Game() {
               <AnimatePresence mode="wait">
               {!hasGuessed ? (
                 <motion.div layout>
-                  <h2>Century</h2>
-                  <div id='century-selector'>
+                  <p>Year Selected</p>
+                  <h1>{currYearFormatted}</h1>
+                  <p>Century</p>
+                  <div className='century-selector'>
+                    
                     <motion.button 
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={()=>{handleCentury(-1)}}><strong>{"<"}</strong></motion.button>
-                    <h2>{century}</h2>
+                      onClick={()=>{handleCentury(-1)}}
+                    >
+                      <motion.img className="arrow-left" src='/next (1).png'/>
+                    </motion.button>
+                    <div className='centuries-display-container'>
+                      <div className='centuries-display'>
+                        <h3>{formatCentury(century-1)}</h3>
+                        <h2>{formatCentury(century)}</h2>
+                        <h3>{formatCentury(century+1)}</h3>
+                      </div>
+
+                      <p>{centLabel(century)}</p>
+
+                    </div>
                     <motion.button 
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
-                      onClick={()=>{handleCentury(1)}}>{">"}</motion.button>
+                      onClick={()=>{handleCentury(1)}}
+                    >
+                      <motion.img src='/next (1).png'/>
+                    </motion.button>
 
                   </div>
                   <input type='range' value={currYear} onChange={handleChange} min={0} max={99} />
-                  <h2>Current Year Selected: {currYearFormatted}</h2>
+                  <div id='year-selector-guide'>
+                    <span>00</span>
+                    <span>25</span>
+                    <span>50</span>
+                    <span>75</span>
+                    <span>99</span>
+                  </div>
+                  <br/>
                   <motion.button whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={handleGuess}><h3>Guess</h3></motion.button>
+                    onClick={handleGuess}
+                    disabled={!imageURL}>
+                      <h3>Guess</h3>
+                  </motion.button>
                 </motion.div>
               ) : (
                 <motion.div layout >
@@ -216,44 +289,52 @@ function Game() {
           </section>
         </>
       }
-      {!imageURL && round == 11 &&
-        <section>
-          <h1>Results:</h1>
-          <h2>Total Score: {totalScore} / 10000</h2>
-          <br/>
-          <button onClick={handlePlayAgain}>Play Again</button>
-          <div className='game-layout'>
-            <div className='results-column'>
-              <p>Your Best Guess:</p>
-              {bestGuess ?(
-                <>
-                  <img src={bestGuess.imageURL} /> 
-                  <p><strong>Score: </strong>{bestGuess.score}</p>
-                  <p><strong>Artist: </strong>{bestGuess.artist_title}</p>
-                  <p><strong>Made in: </strong>{bestGuess.correct}</p>
-                </>
-              ):( 
-                <p>None</p> 
-              )}
+      <AnimatePresence mode="wait">
+        {!imageURL && round == 11 &&
+          <motion.section
+            initial={{opacity:0}}
+            animate={{opacity:1}}
+            exit={{opacity:0}}
+          >
+            <h2>Results:</h2>
+            <h2>Total Score: {totalScore} / 10000</h2>
+            <br/>
+            <button onClick={handlePlayAgain}>Play Again</button>
+            <div className='game-layout'>
+              <div className='results-column'>
+                
+                
+                  <p>Your Best Guess:</p>
+                  {bestGuess ?(
+                    <div>
+                      <img src={bestGuess.imageURL} /> 
+                      <p><strong>Score: </strong>{bestGuess.score}</p>
+                      <p><strong>Artist: </strong>{bestGuess.artist_title}</p>
+                      <p><strong>Made in: </strong>{bestGuess.correct}</p>
+                    </div>
+                  ):( 
+                    <p>None</p> 
+                  )}
+              </div>
+              <div className='results-column'>
+                <p>Your Worst Guess:</p>
+                {worstGuess ?(
+                  <>
+                    <img src={worstGuess.imageURL} /> 
+                    <p><strong>Score: </strong>{worstGuess.score}</p>
+                    <p><strong>Artist: </strong>{worstGuess.artist_title}</p>
+                    <p><strong>Made in: </strong>{worstGuess.correct}</p>
+                  </>
+                ):( 
+                  <p>None</p> 
+                )}
+                
+              </div>
             </div>
-            <div className='results-column'>
-              <p>Your Worst Guess:</p>
-              {worstGuess ?(
-                <>
-                  <img src={worstGuess.imageURL} /> 
-                  <p><strong>Score: </strong>{worstGuess.score}</p>
-                  <p><strong>Artist: </strong>{worstGuess.artist_title}</p>
-                  <p><strong>Made in: </strong>{worstGuess.correct}</p>
-                </>
-              ):( 
-                <p>None</p> 
-              )}
-              
-            </div>
-          </div>
-          
-        </section>
-      }
+            
+          </motion.section>
+        }
+      </AnimatePresence>
     </>
   )
 }
