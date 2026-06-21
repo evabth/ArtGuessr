@@ -1,41 +1,50 @@
 import React, { useState, useEffect } from 'react';
 import { motion , AnimatePresence } from "motion/react"
+import {API} from "../api/endpoints"
 import '../App.css'
-
-
-const server_URL = "http://localhost:3000"
 
 function Game() {
   interface Result {
     score: number;
     correct: number;
+    totalScore:number;
     artist_title: string;
     description?: string;
-    imageURL?: string;
+    imageURL?: string; 
   }
   
   const [totalScore, setTotalScore] = useState(0)
   const [round, setRound] = useState(1)
-  const [artID, setArtID] = useState("")
   const [imageURL, setImageURL] = useState("")
   const [imgLoaded, setImgLoaded] = useState(false);
   const [currYear, setCurrYear] = useState(1)
   const [currYearFormatted, setCurrYearFormatted] = useState("1701")
   const [hasGuessed, setHasGuessed] = useState(false)
   const [century, setCentury] = useState(18)
+  const [direction, setDirection] = useState(0);
   const [result, setResult] = useState<Result | null>(null)
   const [bestGuess, setBestGuess] = useState<Result | null>(null)
   const [worstGuess, setWorstGuess] = useState<Result | null>(null)
+  const [gameId, setGameId] = useState("")
 
 
-  async function fetchImage() {
+  async function fetchImage(gameId:String) {
 
-    const data = await fetch(server_URL + "/random")
+    const data = await fetch(API.game.nextArtwork,{
+      method:'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:JSON.stringify({
+        gameId: gameId,
+      })
+
+      
+
+    })
 
     const dataJSON = await data.json()
     
     setImageURL(dataJSON.imageURL)
-    setArtID(dataJSON.id)
+    setGameId(dataJSON.gameId)
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>){
@@ -51,11 +60,11 @@ function Game() {
 
     button.disabled = true
 
-    const guess_response = await fetch(server_URL + "/guess", {
+    const guess_response = await fetch(API.game.guess, {
       method:'POST',
       headers: { 'Content-Type': 'application/json' },
       body:JSON.stringify({
-        artID: artID,
+        gameId: gameId,
         guess: ((century-1)*100)+currYear,
       })
 
@@ -74,7 +83,7 @@ function Game() {
     console.log(guess_json)
 
     setResult(guess_json)
-    setTotalScore(totalScore + guess_json.score)
+    setTotalScore(guess_json.totalScore)
 
     if(!bestGuess || bestGuess.score < guess_json.score){
       setBestGuess({...guess_json, imageURL:imageURL})
@@ -125,7 +134,7 @@ function Game() {
     setRound(round+1)
     console.log(round)
     if(round != 10){
-      fetchImage()
+      fetchImage(gameId)
     }
 
     
@@ -134,6 +143,7 @@ function Game() {
   function handleCentury(change:number){
 
     const newCentury = century + change;
+    setDirection(change);
     
 
     if(newCentury<22 && newCentury> -13){
@@ -142,18 +152,35 @@ function Game() {
     }
 
   }
+  
+  const slideVariants = {
+  enter: (dir: number) => ({
+    x: dir > 0 ? 100 : -100,
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+  },
+  exit: (dir: number) => ({
+    x: dir > 0 ? -100 : 100,
+    opacity: 0,
+  }),
+};
 
   function handlePlayAgain(){
     setImageURL("")
+    setBestGuess(null)
+    setWorstGuess(null)
     setRound(1)
     setTotalScore(0)
-    fetchImage()
+    fetchImage("")
 
   }
 
   useEffect(()=>{
 
-    fetchImage();
+    fetchImage("");
 
     console.log("game page")
 
@@ -225,16 +252,26 @@ function Game() {
                       whileTap={{ scale: 0.95 }}
                       onClick={()=>{handleCentury(-1)}}
                     >
-                      <motion.img className="arrow-left" src='/next (1).png'/>
+                      <motion.img className="arrow-left" src='/next (1).png' alt='<'/>
                     </motion.button>
                     <div className='centuries-display-container'>
-                      <div className='centuries-display'>
-                        <h3>{formatCentury(century-1)}</h3>
-                        <h2>{formatCentury(century)}</h2>
-                        <h3>{formatCentury(century+1)}</h3>
-                      </div>
+                      <AnimatePresence mode="wait" custom={direction}>
+                        <motion.div 
+                          key={century}               
+                          className='centuries-display'
+                          custom={direction} 
+                          variants={slideVariants}
+                          initial="enter"
+                          animate="center"
+                          exit="exit"
+                          transition={{ duration: 0.17, ease: 'easeInOut' }}
 
-                      <p>{centLabel(century)}</p>
+                        >
+                          <h2>{formatCentury(century)}</h2>
+                          <p>{centLabel(century)}</p>
+                        </motion.div>
+                      </AnimatePresence>
+                      
 
                     </div>
                     <motion.button 
@@ -242,7 +279,7 @@ function Game() {
                       whileTap={{ scale: 0.95 }}
                       onClick={()=>{handleCentury(1)}}
                     >
-                      <motion.img src='/next (1).png'/>
+                      <motion.img src='/next (1).png' alt='>'/>
                     </motion.button>
 
                   </div>
@@ -259,7 +296,7 @@ function Game() {
                     whileTap={{ scale: 0.95 }}
                     onClick={handleGuess}
                     disabled={!imageURL}>
-                      <h3>Guess</h3>
+                    Guess
                   </motion.button>
                 </motion.div>
               ) : (

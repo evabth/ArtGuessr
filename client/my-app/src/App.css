@@ -38,13 +38,13 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 30px; 
   min-width: 40px;
 }
 
 .century-selector button {
   background-color: transparent;
   border-color: transparent;
+  box-shadow: none;
   max-width: 50px;
   max-height: 50px;
 
@@ -61,22 +61,17 @@
 }
 
 .centuries-display-container{
-  width:20%;
+  width:25%;
   text-align: center;
+  overflow: hidden
 }
 
 .centuries-display {
   display: flex;
+  flex-direction: column;
   width: 100%;
   align-items: center;
-  justify-content: center;
-  gap: 20%;
 }
-
-.centuries-display > *{
-  min-width: 25%;
-}
-
 
 .results-column {
   display:flex;
