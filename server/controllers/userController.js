@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 const User = require("../models/userModel")
 
+const ACCESS_TOKEN_EXPIRES_MILISECONDS = 30 * 1000
 //@desc Register a User
 //@route POST /users/register
 //@access public
@@ -90,8 +91,8 @@ const loginUser = asyncHandler(async (req,res)=>{
             throw new Error("Failed to Generate Token");
         }
         res.status(200);
-        res.cookie('jwt', refreshToken, {httpOnly:true, maxAge: 24 * 60* 60 * 1000});
-        res.json({accessToken});
+        res.cookie('jwt', refreshToken, {httpOnly:true,sameSite:'None',secure:true, maxAge: 24 * 60* 60 * 1000});
+        res.json({accessToken, expiresIn: Date.now() + ACCESS_TOKEN_EXPIRES_MILISECONDS});
     }else{
         res.status(401)
         throw new Error("Email or Password is not valid")
@@ -106,9 +107,78 @@ const currentUser = asyncHandler(async (req,res)=>{
 })
 
 
-const refresh = asyncHandler(async (req,res)=>{
-    res.json({message:"new access token"})
+const handleLogout = asyncHandler(async (req,res)=>{
+    const cookies = req.cookies
+
+    if(!cookies?.jwt){
+        res.sendStatus(204); //change to 204 no change
+        return
+    }
+
+    const refreshToken = cookies.jwt
+    const user = await User.findOne({ refreshToken });
+
+    if(!user){
+        res.clearCookie('jwt', {httpOnly: true,sameSite:'None',secure:true})
+        res.sendStatus(204)
+
+    }
+
+    
+    const refreshRes = await User.findByIdAndUpdate(
+        user.id,
+        {
+            refreshToken: ""
+        },
+        {
+        returnDocument: 'after',
+        runValidators: true
+        },
+    )
+    
+    res.clearCookie('jwt', {httpOnly: true,sameSite:'None',secure:true})
+    res.sendStatus(204)
+    
+})
+
+const handleRefreshToken = asyncHandler(async (req,res)=>{
+    const cookies = req.cookies
+
+    if(!cookies?.jwt){
+        res.status(401);
+    }
+
+    const refreshToken = cookies.jwt
+    const user = await User.findOne({ refreshToken });
+
+    if (user ){
+        jwt.verify(
+            refreshToken,
+            process.env.REFRESH_TOKEN_SECRET,
+            (err,decoded)=>{
+
+                if(err || user.id !== decoded.user.id) return res.sendStatus(403)
+                const accessToken = jwt.sign({
+                        user:{
+                            username: user.username,
+                            email: user.email,
+                            id: user.id,
+                        },
+                    },
+                    process.env.ACCESS_TOKEN_SECRET,
+                    {expiresIn: '30s'}
+                )
+
+                res.json({accessToken, expiresIn: Date.now() + ACCESS_TOKEN_EXPIRES_MILISECONDS})
+
+            }
+        )
+        
+    }else{
+        res.status(403)
+        throw new Error("Forbidden")
+    }
 })
 
 
-module.exports = {registerUser, loginUser, currentUser};
+module.exports = {registerUser, loginUser, currentUser, handleLogout, handleRefreshToken};
