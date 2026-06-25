@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion , AnimatePresence } from "motion/react"
-import {API} from "../api/endpoints"
+import {API_ENDPOINTS} from "../api/endpoints"
+import useAxiosPrivate from '../hooks/useAxiosPrivate';
 import '../App.css'
 
 function Game() {
@@ -12,6 +13,8 @@ function Game() {
     description?: string;
     imageURL?: string; 
   }
+
+  const axiosPrivate = useAxiosPrivate();
   
   const [totalScore, setTotalScore] = useState(0)
   const [round, setRound] = useState(1)
@@ -30,21 +33,12 @@ function Game() {
 
   async function fetchImage(gameId:String) {
 
-    const data = await fetch(API.game.nextArtwork,{
-      method:'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:JSON.stringify({
-        gameId: gameId,
-      })
-
-      
-
+    const imageReq = await axiosPrivate.post(API_ENDPOINTS.game.nextArtwork,{
+      gameId
     })
-
-    const dataJSON = await data.json()
     
-    setImageURL(dataJSON.imageURL)
-    setGameId(dataJSON.gameId)
+    setImageURL(imageReq.data.imageURL)
+    setGameId(imageReq.data.gameId)
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>){
@@ -60,16 +54,9 @@ function Game() {
 
     button.disabled = true
 
-    const guess_response = await fetch(API.game.guess, {
-      method:'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:JSON.stringify({
-        gameId: gameId,
-        guess: ((century-1)*100)+currYear,
-      })
-
-      
-
+    const guess_response = await axiosPrivate.post(API_ENDPOINTS.game.guess,{
+      guess: ((century-1)*100)+currYear,
+      gameId
     })
 
     if (guess_response.status != 200){
@@ -77,19 +64,17 @@ function Game() {
       console.log("guess failed")
       return
     }
-
-    const guess_json = await guess_response.json()
     console.log("guess results")
-    console.log(guess_json)
+    console.log(guess_response)
 
-    setResult(guess_json)
-    setTotalScore(guess_json.totalScore)
+    setResult(guess_response.data)
+    setTotalScore(guess_response.data.totalScore)
 
-    if(!bestGuess || bestGuess.score < guess_json.score){
-      setBestGuess({...guess_json, imageURL:imageURL})
+    if(!bestGuess || bestGuess.score < guess_response.data.score){
+      setBestGuess({...guess_response.data, imageURL:imageURL})
     }
-    if(!worstGuess || worstGuess.score > guess_json.score){
-      setWorstGuess({...guess_json, imageURL:imageURL})
+    if(!worstGuess || worstGuess.score > guess_response.data.score){
+      setWorstGuess({...guess_response.data, imageURL:imageURL})
     }
 
     setHasGuessed(true)

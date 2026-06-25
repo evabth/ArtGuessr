@@ -1,14 +1,26 @@
 import { Routes, Route } from 'react-router-dom';
 import Home from './Home';
-import Game from './game/Game';
-import Login from './login/Login';
+import Game from './pages/Game';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import RequireAuth from './components/RequireAuth';
+import Missing from './pages/Missing'
 
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/game" element={<Game />} />
+      
+      <Route path='/register' element={<Register/>}/>
       <Route path="/login" element ={<Login />} />
+      
+      <Route element={<RequireAuth/>}>
+        <Route path="/" element={<Home />} />
+        <Route path="/game" element={<Game />} />
+      </Route>
+
+      <Route path="*" element={<Missing/>}/>
+      
+      
     </Routes>
   )
 }
