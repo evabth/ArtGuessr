@@ -1,43 +1,29 @@
 const asyncHandler = require("express-async-handler")
 const GameState = require("../models/gameStateModel")
+const { getPaintingIDs } = require('../config/metCache.js');
 
 //@desc Get a Random Image
 //@route GET /game/random
 //@access public
 const random = asyncHandler( async (req,res)=> {
 
-  const randomPage = Math.floor(Math.random() * 10) + 1; //41
-
   const gameId = req.body.gameId
 
-  const response = await fetch('https://api.artic.edu/api/v1/artworks/search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      fields: ['id', 'title', 'date_end', 'image_id', 'artwork_type_title'],
-      limit: 100,
-      page: randomPage,
-      query: { match: { artwork_type_title: 'Painting' } }
-    })
-  });
+  const paintingIDs = getPaintingIDs();
+  let objectID
 
-  const page_json = await response.json()
+  do {
+    const rand_index = Math.floor(Math.random() * paintingIDs.length);
+    objectID = paintingIDs[rand_index];
 
-  let image_id, id, date_end
+    const objectResponse = await fetch(
+      `https://collectionapi.metmuseum.org/public/collection/v1/objects/${objectID}`
+    );
+    objectResponseJSON = await objectResponse.json();
 
-  if (Array.isArray(page_json.data)){
+    console.log(objectID, objectResponseJSON.primaryImageSmall);
 
-    const rand_index = Math.floor(Math.random() * page_json.data.length ) 
-
-    image_id = page_json.data[rand_index].image_id
-    id = page_json.data[rand_index].id
-    date_end = page_json.data[rand_index].date_end
-    
-  }else{
-    image_id = page_json.data.image_id
-    id = page_json.data.id
-    date_end = page_json.data.date_end
-  }
+  } while (!objectResponseJSON.primaryImageSmall);
 
   let currGameState;
   
@@ -45,16 +31,16 @@ const random = asyncHandler( async (req,res)=> {
     currGameState = await GameState.create({
       score:0,
       round:1,
-      currPaintingYear:date_end,
-      currArtID: id,
+      currPaintingYear:objectResponseJSON.objectEndDate,
+      currArtID: objectID,
 
     })
   }else{ // need to check the round of the game given to make sure it is not the same game again
     currGameState = await GameState.findByIdAndUpdate(
       gameId,
       { 
-        currPaintingYear:date_end,
-        currArtID: id,
+        currPaintingYear:objectResponseJSON.objectEndDate,
+        currArtID: objectID,
       },
       {
         returnDocument: 'after',
@@ -62,14 +48,15 @@ const random = asyncHandler( async (req,res)=> {
       }
     );
   }
+  console.log(objectResponseJSON.primaryImage)
 
   if(!currGameState){
     res.status(500)
     throw new Error("Game initialization failed")
   }
 
-  data = {
-    imageURL:`https://www.artic.edu/iiif/2/${image_id}/full/843,/0/default.jpg`, 
+  const data = {
+    imageURL:objectResponseJSON.primaryImage, 
     gameId: currGameState.id 
   }
 
@@ -102,10 +89,13 @@ const guess = asyncHandler( async (req,res)=>{
     throw new Error("Forbidden: Game is Over!")
   }
 
-  art_res = await fetch(`https://api.artic.edu/api/v1/artworks/${currGameState.currArtID}`)
-  art_json = await art_res.json()
+  const objectResponse = await fetch(
+      `https://collectionapi.metmuseum.org/public/collection/v1/objects/${currGameState.currArtID}`
+  );
 
-  const distance = Math.abs(guess - art_json.data.date_end)
+  const objectResponseJSON = await objectResponse.json()
+
+  const distance = Math.abs(guess - currGameState.currPaintingYear)
   let score = Math.floor(1000*(1.02)**(-distance))
 
   const updatedGameState = await GameState.findByIdAndUpdate(
@@ -131,8 +121,9 @@ const guess = asyncHandler( async (req,res)=>{
     score: score,
     totalScore: updatedGameState.score,
     correct: updatedGameState.currPaintingYear,
-    artist_title: art_json.data.artist_title,
-    description: art_json.data.description
+    artist_title: objectResponseJSON.artistDisplayName,
+    work_title:objectResponseJSON.title,
+    description: null
      
   }
 

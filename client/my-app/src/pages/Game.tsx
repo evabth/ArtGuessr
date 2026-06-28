@@ -9,8 +9,8 @@ function Game() {
     score: number;
     correct: number;
     totalScore:number;
+    work_title:string;
     artist_title: string;
-    description?: string;
     imageURL?: string; 
   }
 
@@ -33,12 +33,20 @@ function Game() {
 
   async function fetchImage(gameId:String) {
 
-    const imageReq = await axiosPrivate.post(API_ENDPOINTS.game.nextArtwork,{
-      gameId
-    })
+    try{
+
+      const imageReq = await axiosPrivate.post(API_ENDPOINTS.game.nextArtwork,{
+        gameId
+      })
+      setImageURL(imageReq.data.imageURL)
+      setGameId(imageReq.data.gameId)
+    }catch(err){
+
+      console.log(err)
+
+    }
     
-    setImageURL(imageReq.data.imageURL)
-    setGameId(imageReq.data.gameId)
+    
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>){
@@ -121,7 +129,6 @@ function Game() {
     if(round != 10){
       fetchImage(gameId)
     }
-
     
   }
 
@@ -131,7 +138,7 @@ function Game() {
     setDirection(change);
     
 
-    if(newCentury<22 && newCentury> -13){
+    if(newCentury<22 && newCentury> 12){
       setCentury(newCentury)
       setCurrYearFormatted(formatYear(((newCentury-1)*100)+currYear))
     }
@@ -290,13 +297,8 @@ function Game() {
                     <h2>Your Guess: {currYearFormatted}</h2>
                     <h2>Score: {result.score}</h2>
                     <h2>Correct Answer: {formatYear(result.correct)}</h2>
+                    <h2>Painting: {result.work_title}</h2>
                     <h2>Artist: {result.artist_title}</h2>
-                    {result.description && (
-                      <>
-                        <h2>Description:</h2>
-                        <div dangerouslySetInnerHTML={{ __html: result.description }} />
-                      </>
-                    )}
                     <motion.button 
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
