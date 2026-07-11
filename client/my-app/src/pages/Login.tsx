@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {API_ENDPOINTS} from "../api/endpoints"
 const API_BASE = import.meta.env.VITE_API_URL;
 import useAuth from '../hooks/useAuth'
-import { Link,useNavigate, useLocation } from 'react-router-dom';
+import {useNavigate, useLocation } from 'react-router-dom';
 import '../App.css'
 
 

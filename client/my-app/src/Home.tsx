@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom';
+import Header from './components/Header';
 
 function Home() {
+
   return (
     <>
-      <h1>Art Guessr</h1>
+      <Header/>
       <Link to="/game">Play Now!</Link>
+      
     </>
   )
 }

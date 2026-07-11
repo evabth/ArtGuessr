@@ -1,0 +1,20 @@
+.header-container {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 1rem;
+}
+
+.item-left {
+  justify-self: start;
+}
+
+.item-center {
+  justify-self: center;
+  text-decoration: none;
+}
+
+.item-right {
+  justify-self: end;
+}
+

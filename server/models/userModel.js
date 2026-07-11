@@ -17,6 +17,12 @@ const userSchema = mongoose.Schema({
     },
     refreshToken: {
         type:String
+    },
+    currGame:{
+        type:String
+    },
+    topScore:{
+        type:Number
     }
 
 },

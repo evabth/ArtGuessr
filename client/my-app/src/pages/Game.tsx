@@ -3,6 +3,7 @@ import { motion , AnimatePresence } from "motion/react"
 import {API_ENDPOINTS} from "../api/endpoints"
 import useAxiosPrivate from '../hooks/useAxiosPrivate';
 import '../App.css'
+import Header from '../components/Header';
 
 function Game() {
   interface Result {
@@ -185,7 +186,7 @@ function Game() {
 
   return (
     <>
-      <h1>Art Guessr</h1>
+      <Header/>
       {round != 11 &&
         <>
           <h3>Round: {round}</h3>

@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import RequireAuth from './components/RequireAuth';
 import Missing from './pages/Missing'
+import Account from './pages/Account';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
       <Route element={<RequireAuth/>}>
         <Route path="/" element={<Home />} />
         <Route path="/game" element={<Game />} />
+        <Route path="/account" element={<Account/>}/>
       </Route>
 
       <Route path="*" element={<Missing/>}/>

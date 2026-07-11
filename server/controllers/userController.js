@@ -3,7 +3,7 @@ const bcrypt = require("bcrypt")
 const jwt = require("jsonwebtoken")
 const User = require("../models/userModel")
 
-const ACCESS_TOKEN_EXPIRES_MILISECONDS = 30 * 1000
+const ACCESS_TOKEN_EXPIRES_MILISECONDS = 60 * 60  * 1000
 //@desc Register a User
 //@route POST /users/register
 //@access public
@@ -22,8 +22,6 @@ const registerUser = asyncHandler(async (req,res)=> {
 
     }
 
-
-    //Hashed Password
     const hashedPassword = await bcrypt.hash(password,10)
     console.log("Hashed Password:", hashedPassword)
 
@@ -31,6 +29,7 @@ const registerUser = asyncHandler(async (req,res)=> {
         username,
         email,
         password: hashedPassword,
+        topScore: 0,
     })
     console.log(`User Created: ${user}`)
     if (user){
@@ -63,7 +62,7 @@ const loginUser = asyncHandler(async (req,res)=>{
                 },
             },
             process.env.ACCESS_TOKEN_SECRET,
-            {expiresIn: "30m"}
+            {expiresIn: "1hr"}
         );
         const refreshToken = jwt.sign(
             {
@@ -103,7 +102,10 @@ const loginUser = asyncHandler(async (req,res)=>{
 //@route POST /users/current
 //@access private
 const currentUser = asyncHandler(async (req,res)=>{
-    res.json(req.user)
+
+    const user = await User.findById(req.user.id)
+    
+    res.json({username: user.username, email: user.email, topScore: user.topScore})
 })
 
 
@@ -118,10 +120,12 @@ const handleLogout = asyncHandler(async (req,res)=>{
     const refreshToken = cookies.jwt
     const user = await User.findOne({ refreshToken });
 
+    console.log(user)
+
     if(!user){
         res.clearCookie('jwt', {httpOnly: true,sameSite:'None',secure:true})
         res.sendStatus(204)
-
+        return
     }
 
     
@@ -135,6 +139,8 @@ const handleLogout = asyncHandler(async (req,res)=>{
         runValidators: true
         },
     )
+
+    console.log(refreshRes)
     
     res.clearCookie('jwt', {httpOnly: true,sameSite:'None',secure:true})
     res.sendStatus(204)
@@ -150,7 +156,6 @@ const handleRefreshToken = asyncHandler(async (req,res)=>{
 
     const refreshToken = cookies.jwt
     const user = await User.findOne({ refreshToken });
-
     if (user ){
         jwt.verify(
             refreshToken,
@@ -166,7 +171,7 @@ const handleRefreshToken = asyncHandler(async (req,res)=>{
                         },
                     },
                     process.env.ACCESS_TOKEN_SECRET,
-                    {expiresIn: '30m'}
+                    {expiresIn: '1hr'}
                 )
 
                 res.json({accessToken, expiresIn: Date.now() + ACCESS_TOKEN_EXPIRES_MILISECONDS})

@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler")
 const GameState = require("../models/gameStateModel")
 const { getPaintingIDs } = require('../config/metCache.js');
+const userModel = require("../models/userModel.js");
 
 //@desc Get a Random Image
 //@route GET /game/random
@@ -110,6 +111,21 @@ const guess = asyncHandler( async (req,res)=>{
       runValidators: true
     }
   )
+  if (currGameState.round == 10){
+    const currUser = await userModel.findById(req.user.id)
+    if(currGameState.score + score > currUser.topScore){
+      const updateUser= await userModel.findByIdAndUpdate(
+        req.user.id,
+        {
+          topScore: currGameState.score + score
+        },
+        {
+          returnDocument: 'after',
+          runValidators: true
+        }
+      )
+    }
+  }
 
   if(!updatedGameState){
     res.status(500)

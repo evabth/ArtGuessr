@@ -9,7 +9,6 @@ const useRefreshToken = () =>{
     const refresh = async () => {
         const response = await axios.get(API_ENDPOINTS.users.refresh,{
             withCredentials: true,
-
         });
         setAuth(prev =>{
             console.log(JSON.stringify(prev));

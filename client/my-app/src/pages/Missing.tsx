@@ -1,10 +1,11 @@
-
+import Header from '../components/Header';
 
 function Missing (){
 
     return (
         <>
-            <h1>ArtGuessr</h1>
+            <Header/>
+
             <h2>Page Not Found</h2>
         </>
     )

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { motion , AnimatePresence } from "motion/react"
+import { useState } from 'react';
+const API_BASE = import.meta.env.VITE_API_URL;
 import {API_ENDPOINTS} from "../api/endpoints"
+import { Link } from 'react-router-dom';
 import '../App.css'
 
 
@@ -18,7 +19,7 @@ function Register() {
             return
         }
         try{
-            const registerRes = await fetch(API_ENDPOINTS.users.register,{
+            const registerRes = await fetch( API_BASE+API_ENDPOINTS.users.register,{
                 method:'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body:JSON.stringify({
@@ -55,7 +56,7 @@ function Register() {
                 (
                     <div>
                         <h2>You are Now Registered</h2>
-                        <a href='/login'>Login Here</a>
+                        <Link to='/login'>Login Here</Link>
                     </div>
                 )
             
